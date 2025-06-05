@@ -61,14 +61,13 @@
             background: rgba(255, 255, 255, 0.02);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 35px 30px;
+            padding: 50px 40px;
             border-radius: 20px;
             box-shadow: 
                 0 20px 40px rgba(0, 0, 0, 0.3),
                 0 0 0 1px rgba(255, 255, 255, 0.05);
             position: relative;
-            width: 350px;
-            max-width: 90vw;
+            min-width: 400px;
             transition: all 0.3s ease;
         }
         
@@ -93,18 +92,18 @@
         }
         
         .login-box h1 {
-            font-size: 1.6em;
-            margin-bottom: 25px;
+            font-size: 1.8em;
+            margin-bottom: 30px;
         }
         
         input, button {
             width: 100%;
-            padding: 14px 18px;
-            margin: 10px 0;
+            padding: 16px 20px;
+            margin: 12px 0;
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
             color: white;
-            font-size: 14px;
+            font-size: 15px;
             font-family: inherit;
             transition: all 0.3s ease;
             border-radius: 12px;
@@ -226,49 +225,6 @@
             background: linear-gradient(135deg, #00ff99, #00dd77);
         }
         
-        .filter-buttons {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 16px;
-            margin: 40px 0;
-        }
-        
-        .filter-btn {
-            background: rgba(255, 255, 255, 0.05) !important;
-            border: 1px solid rgba(255, 255, 255, 0.2) !important;
-            padding: 20px !important;
-            font-size: 14px !important;
-            font-weight: 500 !important;
-            text-transform: none !important;
-            letter-spacing: 0 !important;
-            border-radius: 16px !important;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-            display: flex !important;
-            flex-direction: column !important;
-            align-items: center !important;
-            text-align: center !important;
-            min-height: 100px !important;
-        }
-        
-        .filter-btn:hover {
-            background: rgba(0, 255, 128, 0.1) !important;
-            border-color: rgba(0, 255, 128, 0.4) !important;
-            transform: translateY(-5px) !important;
-            box-shadow: 0 15px 30px rgba(0, 255, 128, 0.2) !important;
-        }
-        
-        .filter-btn .title {
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: #00ff80;
-        }
-        
-        .filter-btn .description {
-            font-size: 12px;
-            color: rgba(255, 255, 255, 0.6);
-            line-height: 1.4;
-        }
-        
         .chart-container {
             background: rgba(255, 255, 255, 0.02);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -293,12 +249,6 @@
         .chart-container canvas {
             max-height: 300px !important;
             width: 100% !important;
-        }
-        
-        .pattern-canvas-container {
-            display: flex;
-            justify-content: center;
-            margin: 30px 0;
         }
         
         .pattern-canvas {
@@ -436,13 +386,11 @@
             gap: 16px;
             margin: 24px 0;
             flex-wrap: wrap;
-            justify-content: center;
         }
         
         .pattern-controls button {
             flex: 1;
             min-width: 140px;
-            max-width: 200px;
             padding: 14px 20px;
             background: rgba(255, 255, 255, 0.08);
         }
@@ -467,50 +415,12 @@
             background: linear-gradient(135deg, #00ff99, #00dd77);
         }
         
-        /* Filter analysis pages */
-        .filter-stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            margin: 30px 0;
-        }
-        
-        .stat-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 20px;
-            border-radius: 16px;
-            text-align: center;
-            transition: all 0.3s ease;
-        }
-        
-        .stat-card:hover {
-            transform: translateY(-5px);
-            border-color: rgba(0, 255, 128, 0.4);
-        }
-        
-        .stat-card h3 {
-            color: #00ff80;
-            margin-bottom: 10px;
-        }
-        
-        .stat-value {
-            font-size: 2em;
-            font-weight: 600;
-            margin: 10px 0;
-        }
-        
-        .stat-description {
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 0.9em;
-        }
-        
         /* Responsive design */
         @media (max-width: 768px) {
             .login-box {
-                width: 300px;
+                min-width: 320px;
                 margin: 20px;
-                padding: 30px 25px;
+                padding: 40px 30px;
             }
             
             .nav-btn {
@@ -528,10 +438,6 @@
             
             .pattern-controls {
                 flex-direction: column;
-            }
-            
-            .filter-buttons {
-                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -557,7 +463,7 @@
     <!-- Stock Selection Page -->
     <div id="stockPage" class="page">
         <button class="nav-btn back-btn" onclick="logout()">Logout</button>
-        <button class="nav-btn" onclick="showGraphsPage()">Performance →</button>
+        <button class="nav-btn" onclick="showGraphsPage()">Next →</button>
         <div class="container">
             <h1>My Stock Portfolio</h1>
             <div class="add-stock">
@@ -565,36 +471,11 @@
                 <button onclick="addStock()">Add Stock</button>
             </div>
             <div id="stockList" class="stock-list"></div>
-            
-            <h2 style="margin-top: 50px; margin-bottom: 20px;">Analysis Filters</h2>
-            <div class="filter-buttons">
-                <button class="filter-btn" onclick="showFilterPage('revenue')">
-                    <div class="title">5-Year Revenue Growth</div>
-                    <div class="description">Analyze revenue growth trends and compound annual growth rates</div>
-                </button>
-                <button class="filter-btn" onclick="showFilterPage('pe')">
-                    <div class="title">Price-to-Earnings (P/E)</div>
-                    <div class="description">Compare P/E ratios and valuation metrics across stocks</div>
-                </button>
-                <button class="filter-btn" onclick="showFilterPage('debt')">
-                    <div class="title">Debt-to-Equity</div>
-                    <div class="description">Evaluate financial leverage and debt management</div>
-                </button>
-                <button class="filter-btn" onclick="showFilterPage('volume')">
-                    <div class="title">Relative Volume</div>
-                    <div class="description">Monitor trading volume patterns and market interest</div>
-                </button>
-                <button class="filter-btn" onclick="showFilterPage('moving')">
-                    <div class="title">50-Day / 200-Day MA</div>
-                    <div class="description">Track moving average crossovers and trend signals</div>
-                </button>
-            </div>
-            
             <div id="stockMessage"></div>
         </div>
     </div>
 
-    <!-- Performance Graphs Page -->
+    <!-- Graphs Page -->
     <div id="graphsPage" class="page">
         <button class="nav-btn back-btn" onclick="showStockPage()">← Back</button>
         <button class="nav-btn" onclick="showPatternPage()">Pattern Analysis →</button>
@@ -605,67 +486,14 @@
         </div>
     </div>
 
-    <!-- Filter Analysis Pages -->
-    <div id="revenuePage" class="page">
-        <button class="nav-btn back-btn" onclick="showStockPage()">← Back</button>
-        <button class="nav-btn" onclick="showPatternPage('revenue')">Create Pattern →</button>
-        <div class="container">
-            <h1>5-Year Revenue Growth Analysis</h1>
-            <div id="revenueStats" class="filter-stats"></div>
-            <div id="revenueCharts"></div>
-        </div>
-    </div>
-
-    <div id="pePage" class="page">
-        <button class="nav-btn back-btn" onclick="showStockPage()">← Back</button>
-        <button class="nav-btn" onclick="showPatternPage('pe')">Create Pattern →</button>
-        <div class="container">
-            <h1>Price-to-Earnings (P/E) Analysis</h1>
-            <div id="peStats" class="filter-stats"></div>
-            <div id="peCharts"></div>
-        </div>
-    </div>
-
-    <div id="debtPage" class="page">
-        <button class="nav-btn back-btn" onclick="showStockPage()">← Back</button>
-        <button class="nav-btn" onclick="showPatternPage('debt')">Create Pattern →</button>
-        <div class="container">
-            <h1>Debt-to-Equity Analysis</h1>
-            <div id="debtStats" class="filter-stats"></div>
-            <div id="debtCharts"></div>
-        </div>
-    </div>
-
-    <div id="volumePage" class="page">
-        <button class="nav-btn back-btn" onclick="showStockPage()">← Back</button>
-        <button class="nav-btn" onclick="showPatternPage('volume')">Create Pattern →</button>
-        <div class="container">
-            <h1>Relative Volume Analysis</h1>
-            <div id="volumeStats" class="filter-stats"></div>
-            <div id="volumeCharts"></div>
-        </div>
-    </div>
-
-    <div id="movingPage" class="page">
-        <button class="nav-btn back-btn" onclick="showStockPage()">← Back</button>
-        <button class="nav-btn" onclick="showPatternPage('moving')">Create Pattern →</button>
-        <div class="container">
-            <h1>Moving Average Analysis</h1>
-            <div id="movingStats" class="filter-stats"></div>
-            <div id="movingCharts"></div>
-        </div>
-    </div>
-
     <!-- Pattern Creation Page -->
     <div id="patternPage" class="page">
-        <button class="nav-btn back-btn" onclick="goBackFromPattern()">← Back</button>
+        <button class="nav-btn back-btn" onclick="showGraphsPage()">← Back</button>
         <button class="nav-btn" onclick="analyzePattern()">Analyze Pattern</button>
         <div class="container">
             <h1>Create Pattern</h1>
-            <p style="margin-bottom: 20px; color: rgba(255, 255, 255, 0.7); text-align: center;">Click on the canvas to create data points, then connect them to form your pattern:</p>
-            <div class="pattern-canvas-container">
-                <canvas id="patternCanvas" class="pattern-canvas" width="800" height="400"></canvas>
-            </div>
+            <p style="margin-bottom: 20px; color: rgba(255, 255, 255, 0.7);">Click on the canvas to create data points, then connect them to form your pattern:</p>
+            <canvas id="patternCanvas" class="pattern-canvas" width="800" height="400"></canvas>
             <div class="pattern-controls">
                 <button onclick="clearPattern()">Clear Pattern</button>
                 <button onclick="connectPoints()">Connect Points</button>
@@ -700,7 +528,6 @@
         let userStocks = [];
         let patternPoints = [];
         let isConnecting = false;
-        let currentFilter = null;
 
         // Demo stock data
         const demoStockData = {
@@ -712,18 +539,6 @@
             'NVDA': generateMockData(),
             'META': generateMockData(),
             'NFLX': generateMockData()
-        };
-
-        // Demo filter data
-        const demoFilterData = {
-            'AAPL': { revenue: 12.5, pe: 28.3, debt: 1.7, volume: 1.2, ma50: 175.2, ma200: 165.8 },
-            'GOOGL': { revenue: 15.8, pe: 22.1, debt: 0.1, volume: 0.9, ma50: 2850.1, ma200: 2720.5 },
-            'TSLA': { revenue: 45.2, pe: 65.7, debt: 0.4, volume: 2.1, ma50: 245.8, ma200: 220.3 },
-            'MSFT': { revenue: 18.3, pe: 31.2, debt: 0.3, volume: 1.1, ma50: 415.7, ma200: 395.2 },
-            'AMZN': { revenue: 22.1, pe: 58.9, debt: 0.6, volume: 1.4, ma50: 145.3, ma200: 138.7 },
-            'NVDA': { revenue: 35.7, pe: 72.4, debt: 0.2, volume: 1.8, ma50: 450.2, ma200: 380.9 },
-            'META': { revenue: 8.9, pe: 19.8, debt: 0.0, volume: 1.3, ma50: 485.1, ma200: 465.3 },
-            'NFLX': { revenue: 6.2, pe: 42.1, debt: 1.1, volume: 1.0, ma50: 425.8, ma200: 410.2 }
         };
 
         function generateMockData() {
