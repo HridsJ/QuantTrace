@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Analyzer Pro</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-app-compat.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-auth-compat.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-firestore-compat.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0f0f0f 100%);
+            color: #ffffff;
+            font-family: 'Inter', 'Arial', sans-serif;
+            font-weight: 400;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .page {
+            display: none;
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+        }
+        
+        .page.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 10;
+        }
+        
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            position: relative;
+        }
+        
+        .login-box {
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 50px 40px;
+            border-radius: 20px;
+            box-shadow: 
+                0 20px 40px rgba(0, 0, 0, 0.3),
+                0 0 0 1px rgba(255, 255, 255, 0.05);
+            position: relative;
+            min-width: 400px;
+            transition: all 0.3s ease;
+        }
+        
+        .login-box:hover {
+            transform: translateY(-5px);
+            box-shadow: 
+                0 30px 60px rgba(0, 0, 0, 0.4),
+                0 0 0 1px rgba(0, 255, 128, 0.2);
+        }
+        
+        h1, h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-weight: 600;
+        }
+        
+        h1 {
+            font-size: 2.2em;
+            color: #ffffff;
+            margin-bottom: 40px;
+            letter-spacing: -0.5px;
+        }
+        
+        .login-box h1 {
+            font-size: 1.8em;
+            margin-bottom: 30px;
+        }
+        
+        input, button {
+            width: 100%;
+            padding: 16px 20px;
+            margin: 12px 0;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 15px;
+            font-family: inherit;
+            transition: all 0.3s ease;
+            border-radius: 12px;
+        }
+        
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        input:focus {
+            border-color: #00ff80;
+            box-shadow: 0 0 0 3px rgba(0, 255, 128, 0.1);
+            outline: none;
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-1px);
+        }
+        
+        button {
+            background: rgba(255, 255, 255, 0.08);
+            cursor: pointer;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 13px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        button:hover {
+            background: rgba(255, 255, 255, 0.12);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .guest-btn {
+            background: linear-gradient(135deg, #00ff80, #00cc66) !important;
+            color: #000 !important;
+            font-weight: 600;
+        }
+        
+        .guest-btn:hover {
+            background: linear-gradient(135deg, #00ff99, #00dd77) !important;
+            box-shadow: 0 8px 25px rgba(0, 255, 128, 0.3);
+        }
+        
+        .stock-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+            margin: 30px 0;
+        }
+        
+        .stock-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 24px;
+            border-radius: 16px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(10px);
+        }
+        
+        .stock-item:hover {
+            border-color: rgba(0, 255, 128, 0.4);
+            background: rgba(255, 255, 255, 0.05);
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+        
+        .stock-item h3 {
+            font-size: 1.3em;
+            margin-bottom: 8px;
+            color: #00ff80;
+            font-weight: 600;
+        }
+        
+        .stock-item p {
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 16px;
+        }
+        
+        .stock-item button {
+            background: rgba(255, 68, 68, 0.1);
+            border-color: rgba(255, 68, 68, 0.3);
+            color: #ff6b6b;
+            font-size: 12px;
+            padding: 12px 16px;
+        }
+        
+        .stock-item button:hover {
+            background: rgba(255, 68, 68, 0.2);
+            border-color: #ff6b6b;
+        }
+        
+        .add-stock {
+            display: flex;
+            gap: 16px;
+            margin: 30px 0;
+            align-items: stretch;
+        }
+        
+        .add-stock input {
+            flex: 1;
+            margin: 0;
+        }
+        
+        .add-stock button {
+            width: auto;
+            padding: 16px 32px;
+            margin: 0;
+            background: linear-gradient(135deg, #00ff80, #00cc66);
+            color: #000;
+            font-weight: 600;
+        }
+        
+        .add-stock button:hover {
+            background: linear-gradient(135deg, #00ff99, #00dd77);
+        }
+        
+        .chart-container {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin: 24px 0;
+            padding: 24px;
+            border-radius: 16px;
+            height: 400px;
+            transition: all 0.3s ease;
+        }
+        
+        .chart-container:hover {
+            border-color: rgba(0, 255, 128, 0.3);
+            background: rgba(255, 255, 255, 0.04);
+        }
+        
+        .chart-container h3 {
+            color: #ffffff;
+            margin-bottom: 16px;
+            font-weight: 600;
+        }
+        
+        .chart-container canvas {
+            max-height: 300px !important;
+            width: 100% !important;
+        }
+        
+        .pattern-canvas {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            cursor: crosshair;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+        
+        .pattern-canvas:hover {
+            border-color: rgba(0, 255, 128, 0.4);
+        }
+        
+        .nav-btn {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            z-index: 1000;
+            background: linear-gradient(135deg, #0080ff, #0060ff) !important;
+            width: auto !important;
+            padding: 12px 24px !important;
+            border-radius: 25px !important;
+            font-weight: 600 !important;
+            box-shadow: 0 8px 25px rgba(0, 128, 255, 0.3);
+        }
+        
+        .nav-btn:hover {
+            transform: translateY(-3px) !important;
+            box-shadow: 0 12px 35px rgba(0, 128, 255, 0.4) !important;
+        }
+        
+        .back-btn {
+            left: 24px;
+            right: auto;
+            background: linear-gradient(135deg, #666, #888) !important;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+        
+        .back-btn:hover {
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.4) !important;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 60px;
+            font-size: 1.1em;
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top: 3px solid #00ff80;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error {
+            color: #ff6b6b;
+            text-align: center;
+            padding: 16px 20px;
+            background: rgba(255, 107, 107, 0.1);
+            border: 1px solid rgba(255, 107, 107, 0.3);
+            border-radius: 12px;
+            margin: 16px 0;
+        }
+        
+        .success {
+            color: #00ff80;
+            text-align: center;
+            padding: 16px 20px;
+            background: rgba(0, 255, 128, 0.1);
+            border: 1px solid rgba(0, 255, 128, 0.3);
+            border-radius: 12px;
+            margin: 16px 0;
+        }
+        
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 24px;
+            margin: 30px 0;
+        }
+        
+        .result-item {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 24px;
+            border-radius: 16px;
+            height: 380px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .result-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+        
+        .result-item h3 {
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        
+        .result-item canvas {
+            max-height: 220px !important;
+            width: 100% !important;
+            border-radius: 8px;
+        }
+        
+        .pattern-match {
+            background: rgba(0, 255, 128, 0.05);
+            border-color: rgba(0, 255, 128, 0.3);
+        }
+        
+        .pattern-match h3 {
+            color: #00ff80;
+        }
+        
+        .pattern-match:hover {
+            border-color: rgba(0, 255, 128, 0.5);
+            background: rgba(0, 255, 128, 0.08);
+        }
+        
+        /* Pattern page specific styles */
+        .pattern-controls {
+            display: flex;
+            gap: 16px;
+            margin: 24px 0;
+            flex-wrap: wrap;
+        }
+        
+        .pattern-controls button {
+            flex: 1;
+            min-width: 140px;
+            padding: 14px 20px;
+            background: rgba(255, 255, 255, 0.08);
+        }
+        
+        .pattern-controls button:first-child {
+            background: rgba(255, 107, 107, 0.1);
+            border-color: rgba(255, 107, 107, 0.3);
+            color: #ff6b6b;
+        }
+        
+        .pattern-controls button:first-child:hover {
+            background: rgba(255, 107, 107, 0.2);
+        }
+        
+        .pattern-controls button:last-child {
+            background: linear-gradient(135deg, #00ff80, #00cc66);
+            color: #000;
+            font-weight: 600;
+        }
+        
+        .pattern-controls button:last-child:hover {
+            background: linear-gradient(135deg, #00ff99, #00dd77);
+        }
+        
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .login-box {
+                min-width: 320px;
+                margin: 20px;
+                padding: 40px 30px;
+            }
+            
+            .nav-btn {
+                position: relative;
+                top: auto;
+                right: auto;
+                left: auto;
+                margin: 10px 0;
+                display: block;
+            }
+            
+            .add-stock {
+                flex-direction: column;
+            }
+            
+            .pattern-controls {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Page -->
+    <div id="loginPage" class="page active">
+        <div class="login-container">
+            <div class="login-box">
+                <h1>Stock Analyzer Pro</h1>
+                <div id="loginForm">
+                    <input type="email" id="email" placeholder="Email address">
+                    <input type="password" id="password" placeholder="Password">
+                    <button onclick="login()">Sign In</button>
+                    <button onclick="register()">Create Account</button>
+                    <button class="guest-btn" onclick="guestLogin()">Continue as Guest</button>
+                </div>
+                <div id="loginMessage"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stock Selection Page -->
+    <div id="stockPage" class="page">
+        <button class="nav-btn back-btn" onclick="logout()">Logout</button>
+        <button class="nav-btn" onclick="showGraphsPage()">Next →</button>
+        <div class="container">
+            <h1>My Stock Portfolio</h1>
+            <div class="add-stock">
+                <input type="text" id="newStock" placeholder="Enter stock ticker (e.g., AAPL, GOOGL, TSLA)">
+                <button onclick="addStock()">Add Stock</button>
+            </div>
+            <div id="stockList" class="stock-list"></div>
+            <div id="stockMessage"></div>
+        </div>
+    </div>
+
+    <!-- Graphs Page -->
+    <div id="graphsPage" class="page">
+        <button class="nav-btn back-btn" onclick="showStockPage()">← Back</button>
+        <button class="nav-btn" onclick="showPatternPage()">Pattern Analysis →</button>
+        <div class="container">
+            <h1>5-Year Performance Analysis</h1>
+            <div id="graphsContainer"></div>
+            <div id="graphsMessage"></div>
+        </div>
+    </div>
+
+    <!-- Pattern Creation Page -->
+    <div id="patternPage" class="page">
+        <button class="nav-btn back-btn" onclick="showGraphsPage()">← Back</button>
+        <button class="nav-btn" onclick="analyzePattern()">Analyze Pattern</button>
+        <div class="container">
+            <h1>Create Pattern</h1>
+            <p style="margin-bottom: 20px; color: rgba(255, 255, 255, 0.7);">Click on the canvas to create data points, then connect them to form your pattern:</p>
+            <canvas id="patternCanvas" class="pattern-canvas" width="800" height="400"></canvas>
+            <div class="pattern-controls">
+                <button onclick="clearPattern()">Clear Pattern</button>
+                <button onclick="connectPoints()">Connect Points</button>
+            </div>
+            <div id="patternMessage"></div>
+        </div>
+    </div>
+
+    <!-- Results Page -->
+    <div id="resultsPage" class="page">
+        <button class="nav-btn back-btn" onclick="showPatternPage()">← Back</button>
+        <div class="container">
+            <h1>Pattern Matches</h1>
+            <div id="resultsContainer" class="results-grid"></div>
+            <div id="resultsMessage"></div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "demo-key",
+            authDomain: "demo.firebaseapp.com",
+            projectId: "demo-project",
+            storageBucket: "demo.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "demo-app-id"
+        };
+
+        // Initialize Firebase (demo mode)
+        let currentUser = null;
+        let userStocks = [];
+        let patternPoints = [];
+        let isConnecting = false;
+
+        // Demo stock data
+        const demoStockData = {
+            'AAPL': generateMockData(),
+            'GOOGL': generateMockData(),
+            'TSLA': generateMockData(),
+            'MSFT': generateMockData(),
+            'AMZN': generateMockData(),
+            'NVDA': generateMockData(),
+            'META': generateMockData(),
+            'NFLX': generateMockData()
+        };
+
+        function generateMockData() {
+            const data = [];
+            let baseValue = 100 + Math.random() * 200;
+            for (let i = 0; i < 60; i++) {
+                baseValue += (Math.random() - 0.5) * 20;
+                baseValue = Math.max(50, baseValue);
+                data.push({
+                    date: new Date(2019 + Math.floor(i/12), i%12, 1),
+                    value: baseValue
+                });
+            }
+            return data;
+        }
+
+        // Authentication functions
+        function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            if (!email || !password) {
+                showMessage('loginMessage', 'Please enter email and password', 'error');
+                return;
+            }
+            
+            // Demo login
+            currentUser = { email: email, uid: 'demo-user-' + Date.now() };
+            userStocks = ['AAPL', 'GOOGL', 'TSLA']; // Demo stocks
+            showMessage('loginMessage', 'Login successful!', 'success');
+            setTimeout(() => showStockPage(), 1000);
+        }
+
+        function register() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            if (!email || !password) {
+                showMessage('loginMessage', 'Please enter email and password', 'error');
+                return;
+            }
+            
+            // Demo registration
+            currentUser = { email: email, uid: 'demo-user-' + Date.now() };
+            userStocks = [];
+            showMessage('loginMessage', 'Account created successfully!', 'success');
+            setTimeout(() => showStockPage(), 1000);
+        }
+
+        function guestLogin() {
+            currentUser = { email: 'guest@demo.com', uid: 'guest-user' };
+            userStocks = ['AAPL', 'GOOGL', 'TSLA', 'MSFT', 'AMZN'];
+            showMessage('loginMessage', 'Continuing as guest...', 'success');
+            setTimeout(() => showStockPage(), 1000);
+        }
+
+        function logout() {
+            currentUser = null;
+            userStocks = [];
+            showPage('loginPage');
+        }
+
+        // Navigation functions
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            document.getElementById(pageId).classList.add('active');
+        }
+
+        function showStockPage() {
+            showPage('stockPage');
+            loadUserStocks();
+        }
+
+        function showGraphsPage() {
+            showPage('graphsPage');
+            loadGraphs();
+        }
+
+        function showPatternPage() {
+            showPage('patternPage');
+            initPatternCanvas();
+        }
+
+        function showResultsPage() {
+            showPage('resultsPage');
+        }
+
+        // Stock management functions
+        function loadUserStocks() {
+            const stockList = document.getElementById('stockList');
+            stockList.innerHTML = '';
+            
+            userStocks.forEach(ticker => {
+                const stockItem = document.createElement('div');
+                stockItem.className = 'stock-item';
+                stockItem.innerHTML = `
+                    <h3>${ticker}</h3>
+                    <p>Stock ticker: ${ticker}</p>
+                    <button onclick="removeStock('${ticker}')">Remove</button>
+                `;
+                stockList.appendChild(stockItem);
+            });
+        }
+
+        function addStock() {
+            const newStock = document.getElementById('newStock').value.toUpperCase().trim();
+            
+            if (!newStock) {
+                showMessage('stockMessage', 'Please enter a stock ticker', 'error');
+                return;
+            }
+            
+            if (userStocks.includes(newStock)) {
+                showMessage('stockMessage', 'Stock already in your list', 'error');
+                return;
+            }
+            
+            userStocks.push(newStock);
+            document.getElementById('newStock').value = '';
+            showMessage('stockMessage', `${newStock} added to your portfolio`, 'success');
+            loadUserStocks();
+        }
+
+        function removeStock(ticker) {
+            userStocks = userStocks.filter(stock => stock !== ticker);
+            showMessage('stockMessage', `${ticker} removed from portfolio`, 'success');
+            loadUserStocks();
+        }
+
+        // Graph functions
+        function loadGraphs() {
+            const container = document.getElementById('graphsContainer');
+            container.innerHTML = '<div class="loading">Loading graphs...<div class="spinner"></div></div>';
+            
+            setTimeout(() => {
+                container.innerHTML = '';
+                
+                userStocks.forEach(ticker => {
+                    if (demoStockData[ticker]) {
+                        createChart(ticker, demoStockData[ticker], container);
+                    } else {
+                        const errorDiv = document.createElement('div');
+                        errorDiv.className = 'chart-container';
+                        errorDiv.innerHTML = `<h3>${ticker}</h3><p>No data available for ${ticker}</p>`;
+                        container.appendChild(errorDiv);
+                    }
+                });
+            }, 1500);
+        }
+
+        function createChart(ticker, data, container) {
+            const chartDiv = document.createElement('div');
+            chartDiv.className = 'chart-container';
+            
+            const canvas = document.createElement('canvas');
+            
+            chartDiv.innerHTML = `<h3>${ticker} - 5 Year Performance</h3>`;
+            chartDiv.appendChild(canvas);
+            container.appendChild(chartDiv);
+            
+            const ctx = canvas.getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map(d => d.date.getFullYear()),
+                    datasets: [{
+                        label: ticker,
+                        data: data.map(d => d.value),
+                        borderColor: '#00ff80',
+                        backgroundColor: 'rgba(0, 255, 128, 0.1)',
+                        borderWidth: 2,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: '#fff' } }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                            ticks: { color: '#fff' }
+                        },
+                        x: {
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                            ticks: { color: '#fff' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Pattern creation functions
+        function initPatternCanvas() {
+            const canvas = document.getElementById('patternCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.addEventListener('click', addPatternPoint);
+            
+            // Draw grid
+            drawGrid(ctx, canvas.width, canvas.height);
+        }
+
+        function drawGrid(ctx, width, height) {
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.lineWidth = 1;
+            
+            for (let x = 0; x <= width; x += 50) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, height);
+                ctx.stroke();
+            }
+            
+            for (let y = 0; y <= height; y += 50) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+                ctx.stroke();
+            }
+        }
+
+        function addPatternPoint(event) {
+            const canvas = document.getElementById('patternCanvas');
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            
+            patternPoints.push({ x, y });
+            
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#00ff80';
+            ctx.beginPath();
+            ctx.arc(x, y, 5, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Draw point number
+            ctx.fillStyle = '#fff';
+            ctx.font = '12px Inter, Arial';
+            ctx.fillText(patternPoints.length, x + 8, y - 8);
+        }
+
+        function connectPoints() {
+            if (patternPoints.length < 2) {
+                showMessage('patternMessage', 'Add at least 2 points to connect', 'error');
+                return;
+            }
+            
+            const canvas = document.getElementById('patternCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            ctx.strokeStyle = '#00ff80';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(patternPoints[0].x, patternPoints[0].y);
+            
+            for (let i = 1; i < patternPoints.length; i++) {
+                ctx.lineTo(patternPoints[i].x, patternPoints[i].y);
+            }
+            ctx.stroke();
+            
+            showMessage('patternMessage', 'Pattern created successfully!', 'success');
+        }
+
+        function clearPattern() {
+            patternPoints = [];
+            const canvas = document.getElementById('patternCanvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawGrid(ctx, canvas.width, canvas.height);
+            showMessage('patternMessage', 'Pattern cleared', 'success');
+        }
+
+        function analyzePattern() {
+            if (patternPoints.length < 3) {
+                showMessage('patternMessage', 'Create a pattern with at least 3 points', 'error');
+                return;
+            }
+            
+            showMessage('patternMessage', 'Analyzing pattern...', 'success');
+            setTimeout(() => {
+                showResultsPage();
+                loadPatternResults();
+            }, 2000);
+        }
+
+        // Results functions
+        function loadPatternResults() {
+            const container = document.getElementById('resultsContainer');
+            container.innerHTML = '<div class="loading">Analyzing pattern matches...<div class="spinner"></div></div>';
+            
+            setTimeout(() => {
+                container.innerHTML = '';
+                
+                // Simulate pattern matching
+                const matches = [];
+                const nonMatches = [];
+                
+                userStocks.forEach(ticker => {
+                    if (Math.random() > 0.5) {
+                        matches.push(ticker);
+                    } else {
+                        nonMatches.push(ticker);
+                    }
+                });
+                
+                // Show matches
+                matches.forEach(ticker => {
+                    if (demoStockData[ticker]) {
+                        const resultDiv = document.createElement('div');
+                        resultDiv.className = 'result-item pattern-match';
+                        resultDiv.innerHTML = `
+                            <h3>${ticker} - PATTERN MATCH ✓</h3>
+                            <p>Confidence: ${(80 + Math.random() * 20).toFixed(1)}%</p>
+                        `;
+                        
+                        const canvas = document.createElement('canvas');
+                        resultDiv.appendChild(canvas);
+                        
+                        const ctx = canvas.getContext('2d');
+                        new Chart(ctx, {
+                            type: 'line',
+                            data: {
+                                labels: demoStockData[ticker].slice(-12).map((d, i) => `M${i+1}`),
+                                datasets: [{
+                                    label: ticker,
+                                    data: demoStockData[ticker].slice(-12).map(d => d.value),
+                                    borderColor: '#00ff80',
+                                    backgroundColor: 'rgba(0, 255, 128, 0.1)',
+                                    borderWidth: 2
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: { labels: { color: '#fff' } }
+                                },
+                                scales: {
+                                    y: { 
+                                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                                        ticks: { color: '#fff' }
+                                    },
+                                    x: { 
+                                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                                        ticks: { color: '#fff' }
+                                    }
+                                }
+                            }
+                        });
+                        
+                        container.appendChild(resultDiv);
+                    }
+                });
+                
+                // Show non-matches
+                nonMatches.forEach(ticker => {
+                    if (demoStockData[ticker]) {
+                        const resultDiv = document.createElement('div');
+                        resultDiv.className = 'result-item';
+                        resultDiv.innerHTML = `
+                            <h3>${ticker} - No Match</h3>
+                            <p>Pattern similarity too low</p>
+                        `;
+                        container.appendChild(resultDiv);
+                    }
+                });
+                
+                if (matches.length === 0) {
+                    container.innerHTML = '<div class="error">No pattern matches found in your portfolio</div>';
+                }
+            }, 3000);
+        }
+
+        // Utility functions
+        function showMessage(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="${type}">${message}</div>`;
+            setTimeout(() => {
+                element.innerHTML = '';
+            }, 3000);
+        }
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            showPage('loginPage');
+        });
+    </script>
+</body>
+</html>
