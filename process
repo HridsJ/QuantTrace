@@ -1,0 +1,187 @@
+## PROJECT TITLE: Visual Stock Screener with Pattern Matching
+
+---
+
+## **PHASE 1: Project Setup & Authentication**
+
+### Goal:
+
+Implement login and guest access via Firebase, then route to company management.
+
+---
+
+### 1.1 Project Initialization
+
+* Create GitHub repo
+* Set up folder structure:
+
+  ```
+  root/
+  ├── frontend/ (React + Vite or Next.js)
+  └── backend/  (FastAPI or Flask)
+  ```
+
+### 1.2 Firebase Setup
+
+* Create Firebase project
+* Enable **Email/Password** auth
+* Add a **guest test account**
+
+  * `guest@example.com / guest123`
+* Add Firestore database
+* Set Firestore rules:
+
+  ```js
+  rules_version = '2';
+  service cloud.firestore {
+    match /databases/{database}/documents {
+      match /users/{userId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+  }
+  ```
+
+### 1.3 Frontend Auth Page (`/login`)
+
+* Firebase client SDK (`firebase/app`, `firebase/auth`)
+* `LoginForm.jsx`: fields for email/password + "Continue as Guest"
+* On success: route to `/companies`
+* Store UID/token in localStorage
+
+---
+
+## **PHASE 2: Ticker Management (Company List Page)**
+
+### Goal:
+
+Let users view, add, and remove their tracked tickers. Save to Firestore.
+
+---
+
+### 🔹 2.1 Create `/companies` page
+
+* List all tickers saved for the current user (from Firestore)
+* Input field to add a new ticker
+* Delete icon per ticker
+
+### 🔹 2.2 Firestore Structure
+
+```
+users/{uid}/companies: {
+  tickers: ['AAPL', 'TSLA', 'NVDA']
+}
+```
+
+### 🔹 2.3 Button: “Next”
+
+* On click: route to `/screen` (filter/draw page)
+
+---
+
+## **PHASE 3: Screener UI (Filters + Drawing)**
+
+### Goal:
+
+Let users choose either filter options OR draw a pattern, then search for matches.
+
+---
+
+### 🔹 3.1 Create `/screen` page
+
+Split screen layout:
+
+#### A. Filter Section
+
+* Price Range (min/max sliders)
+* Volume threshold
+* Moving Average periods
+* RSI input
+* “Search with Filters” button
+
+#### B. Drawing Section
+
+* Canvas (using Fabric.js or HTML5 canvas)
+* Let users sketch X-Y trend
+* Save drawing as an array of 100 normalized points
+* Input: “Similarity Threshold %”
+* “Search with Drawing” button
+
+---
+
+### 🔹 3.2 UX Logic
+
+* Only one method (filter or drawing) can be active at a time
+* On submission: send request to backend
+* Redirect to `/results`
+
+---
+
+## **PHASE 4: Backend Logic + Results Display**
+
+### Goal:
+
+Fetch matching stocks based on filter or drawing, then display graph results.
+
+---
+
+### 🔹 4.1 Backend API Routes (Python)
+
+| Endpoint                | Description                                           |
+| ----------------------- | ----------------------------------------------------- |
+| `GET /stock?ticker=XYZ` | Return historical data                                |
+| `POST /filter`          | Input: filters → return matching tickers              |
+| `POST /match`           | Input: drawing vector → return similar stock patterns |
+
+**Tech Stack**:
+
+* `yfinance` for price data
+* `ta` for indicators (MA, RSI)
+* `scipy` for DTW or cosine similarity
+
+### 🔹 4.2 Pattern Matching Logic (Python Example)
+
+```python
+from scipy.spatial.distance import cosine
+import numpy as np
+
+def similarity(user_drawn, stock_segment):
+    return 1 - cosine(user_drawn, stock_segment)
+
+# Return top N matches above threshold
+```
+
+---
+
+### 🔹 4.3 Results Page (`/results`)
+
+* If filter: list paginated ticker cards (charts + info)
+* If drawing: list best-matched charts + similarity %
+* Graphs: Recharts, ApexCharts, or Chart.js
+* Overlay drawing on matches (optional)
+
+---
+
+## **PHASE 5: Persistence, UX, and Final Touches**
+
+### Goal:
+
+Polish experience, optimize data use, and deploy.
+
+---
+
+### 🔹 5.1 Save search results (optional)
+
+* Let users save search results or named filter configs
+* `users/{uid}/savedQueries/`
+
+### 🔹 5.2 Paginate and Cache
+
+* Backend caches stock data per ticker (to avoid repeated calls)
+* Paginate results (20 per page)
+
+### 🔹 5.3 Deploy
+
+* Frontend: Vercel or Netlify
+* Backend: Render or Fly.io
+* Firestore handles database & auth
