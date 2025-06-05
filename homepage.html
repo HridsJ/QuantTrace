@@ -436,7 +436,7 @@
             if (demoStockData[ticker]) {
                 const resultDiv = document.createElement('div');
                 resultDiv.className = 'result-item pattern-match';
-                resultDiv.innerHTML = `<h3>${ticker} - PATTERN MATCH ✓</h3><p>Confidence: ${(80 + Math.random() * 20).toFixed(1)}%</p>`;
+                resultDiv.innerHTML = `<h3>${ticker} - PATTERN MATCH</h3><p>Confidence: ${(80 + Math.random() * 20).toFixed(1)}%</p>`;
                 const canvas = document.createElement('canvas');
                 resultDiv.appendChild(canvas);
                 const ctx = canvas.getContext('2d');
