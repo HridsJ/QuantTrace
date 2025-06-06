@@ -12,6 +12,7 @@ body {
     font-weight: 400;
     min-height: 100vh;
     overflow-x: hidden;
+    cursor: none;
 }
 
 .page {
@@ -519,4 +520,30 @@ button:active {
     .filter-buttons {
         grid-template-columns: 1fr;
     }
+}
+
+.cursor {
+  width: 8px;
+  height: 8px;
+  background-color: #00ff66;
+  z-index: 1000;
+}
+
+.follower {
+  width: 20px;
+  height: 20px;
+  background-color: #00ff66;
+  opacity: 0.8;
+  z-index: 999;
+}
+
+.cursor,
+.follower {
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  mix-blend-mode: difference;
 }

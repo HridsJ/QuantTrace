@@ -494,3 +494,29 @@ setTimeout(() => el.innerHTML = '', 3000);
 document.addEventListener('DOMContentLoaded', () => {
 showPage('loginPage');
 });
+
+// cursor settings
+const cursor = document.querySelector('.cursor');
+const follower = document.querySelector('.follower');
+
+let mouseX = 0, mouseY = 0;
+let posX = 0, posY = 0;
+
+document.addEventListener('mousemove', (e) => {
+mouseX = e.clientX;
+mouseY = e.clientY;
+cursor.style.left = `${mouseX}px`;
+cursor.style.top = `${mouseY}px`;
+});
+
+function animateFollower() {
+posX += (mouseX - posX) / 8;
+posY += (mouseY - posY) / 8;
+
+follower.style.left = `${posX}px`;
+follower.style.top = `${posY}px`;
+
+requestAnimationFrame(animateFollower);
+}
+
+animateFollower();
