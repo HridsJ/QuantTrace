@@ -1,10 +1,10 @@
-
 const firebaseConfig = { apiKey: "demo-key" };
 let currentUser = null;
 let userStocks = [];
 let patternPoints = [];
 let isConnecting = false;
 let pageHistory = [];
+let currentFilter = null; // Track current filter context
 
 const demoStockData = {
 'AAPL': generateMockData(),
@@ -17,6 +17,7 @@ const demoStockData = {
 'NFLX': generateMockData()
 };
 
+// Generate different types of mock data for different filters
 function generateMockData() {
 const data = [];
 let base = 100 + Math.random() * 200;
@@ -24,6 +25,54 @@ for (let i = 0; i < 60; i++) {
     base += (Math.random() - 0.5) * 20;
     base = Math.max(50, base);
     data.push({ date: new Date(2019 + Math.floor(i/12), i%12, 1), value: base });
+}
+return data;
+}
+
+function generateFilterData(filterType, ticker) {
+const data = [];
+let base, label, suffix;
+
+switch(filterType) {
+    case 'revenue':
+        base = 1000 + Math.random() * 5000; // Million $
+        label = 'Revenue (M$)';
+        suffix = 'M';
+        break;
+    case 'pe':
+        base = 15 + Math.random() * 25; // P/E ratio
+        label = 'P/E Ratio';
+        suffix = '';
+        break;
+    case 'debt':
+        base = 20 + Math.random() * 60; // Debt to Equity %
+        label = 'Debt to Equity (%)';
+        suffix = '%';
+        break;
+    case 'volume':
+        base = 1000000 + Math.random() * 50000000; // Volume
+        label = 'Trading Volume';
+        suffix = '';
+        break;
+    case 'moving':
+        base = 100 + Math.random() * 200; // Moving average
+        label = '50-Day Moving Average';
+        suffix = '';
+        break;
+    default:
+        return generateMockData();
+}
+
+for (let i = 0; i < 60; i++) {
+    const variation = filterType === 'volume' ? base * 0.3 : base * 0.2;
+    base += (Math.random() - 0.5) * variation;
+    base = Math.max(filterType === 'pe' ? 5 : (filterType === 'volume' ? 100000 : 10), base);
+    data.push({ 
+        date: new Date(2019 + Math.floor(i/12), i%12, 1), 
+        value: base,
+        label: label,
+        suffix: suffix
+    });
 }
 return data;
 }
@@ -59,6 +108,7 @@ setTimeout(() => showStockPage(), 1000);
 function logout() {
 currentUser = null;
 userStocks = [];
+currentFilter = null;
 showPage('loginPage');
 }
 
@@ -108,8 +158,13 @@ const pageMap = {
     volume: 'volumePage',
     moving: 'movingPage'
 };
-if (pageMap[type]) showPage(pageMap[type]);
-else alert('Unknown filter: ' + type);
+if (pageMap[type]) {
+    currentFilter = type;
+    showPage(pageMap[type]);
+    loadFilterGraphs(type);
+} else {
+    alert('Unknown filter: ' + type);
+}
 }
 
 // STOCK MANAGEMENT
@@ -154,6 +209,38 @@ setTimeout(() => {
 }, 1000);
 }
 
+// FILTER GRAPHS
+function loadFilterGraphs(filterType) {
+const containerIds = {
+    revenue: 'revenueGraphsContainer',
+    pe: 'peGraphsContainer', 
+    debt: 'debtGraphsContainer',
+    volume: 'volumeGraphsContainer',
+    moving: 'movingGraphsContainer'
+};
+
+const container = document.getElementById(containerIds[filterType]);
+if (!container) return;
+
+const filterNames = {
+    revenue: 'Revenue Analysis',
+    pe: 'P/E Ratio Analysis',
+    debt: 'Debt to Equity Analysis', 
+    volume: 'Trading Volume Analysis',
+    moving: 'Moving Average Analysis'
+};
+
+container.innerHTML = `<div class="loading">Loading ${filterNames[filterType]}...<div class="spinner"></div></div>`;
+
+setTimeout(() => {
+    container.innerHTML = '';
+    userStocks.forEach(ticker => {
+        const filterData = generateFilterData(filterType, ticker);
+        createFilterChart(ticker, filterData, container, filterType);
+    });
+}, 1000);
+}
+
 function createChart(ticker, data, container) {
 const div = document.createElement('div');
 div.className = 'chart-container';
@@ -186,12 +273,64 @@ new Chart(ctx, {
 });
 }
 
+function createFilterChart(ticker, data, container, filterType) {
+const div = document.createElement('div');
+div.className = 'chart-container';
+const canvas = document.createElement('canvas');
+div.innerHTML = `<h3>${ticker} - ${data[0].label}</h3>`;
+div.appendChild(canvas);
+container.appendChild(div);
+const ctx = canvas.getContext('2d');
+
+const chartColors = {
+    revenue: '#4CAF50',
+    pe: '#2196F3', 
+    debt: '#FF9800',
+    volume: '#9C27B0',
+    moving: '#00BCD4'
+};
+
+new Chart(ctx, {
+    type: 'line',
+    data: {
+    labels: data.map(d => d.date.getFullYear()),
+    datasets: [{
+        label: `${ticker} ${data[0].label}`,
+        data: data.map(d => d.value),
+        borderColor: chartColors[filterType] || '#00ff80',
+        backgroundColor: chartColors[filterType] ? chartColors[filterType] + '20' : 'rgba(0,255,128,0.1)',
+        borderWidth: 2,
+        fill: true
+    }]
+    },
+    options: {
+    responsive: true,
+    plugins: { legend: { labels: { color: '#fff' } } },
+    scales: {
+        y: { 
+            ticks: { 
+                color: '#fff',
+                callback: function(value) {
+                    if (filterType === 'volume') {
+                        return (value / 1000000).toFixed(1) + 'M';
+                    }
+                    return value.toFixed(filterType === 'pe' ? 1 : 0) + (data[0].suffix || '');
+                }
+            }, 
+            grid: { color: 'rgba(255,255,255,0.1)' } 
+        },
+        x: { ticks: { color: '#fff' }, grid: { color: 'rgba(255,255,255,0.1)' } }
+    }
+    }
+});
+}
+
 // PATTERN LOGIC
 function initPatternCanvas() {
 const canvas = document.getElementById('patternCanvas');
 const ctx = canvas.getContext('2d');
 canvas.addEventListener('click', addPatternPoint);
-drawGrid(ctx, canvas.width, canvas.height);
+clearPattern(); // Reset pattern when initializing
 }
 
 function drawGrid(ctx, width, height) {
@@ -253,7 +392,10 @@ showMessage('patternMessage', 'Pattern cleared', 'success');
 
 function analyzePattern() {
 if (patternPoints.length < 3) return showMessage('patternMessage', 'Create a pattern with at least 3 points', 'error');
-showMessage('patternMessage', 'Analyzing pattern...', 'success');
+
+const filterContext = currentFilter ? ` for ${currentFilter.toUpperCase()} filter` : '';
+showMessage('patternMessage', `Analyzing pattern${filterContext}...`, 'success');
+
 setTimeout(() => {
     showResultsPage();
     loadPatternResults();
@@ -262,59 +404,84 @@ setTimeout(() => {
 
 function loadPatternResults() {
 const container = document.getElementById('resultsContainer');
-container.innerHTML = '<div class="loading">Analyzing pattern matches...<div class="spinner"></div></div>';
+const filterContext = currentFilter ? ` (${currentFilter.toUpperCase()} Filter)` : '';
+container.innerHTML = `<div class="loading">Analyzing pattern matches${filterContext}...<div class="spinner"></div></div>`;
+
 setTimeout(() => {
     container.innerHTML = '';
     const matches = [];
     const nonMatches = [];
+    
     userStocks.forEach(ticker => {
     (Math.random() > 0.5 ? matches : nonMatches).push(ticker);
     });
 
     matches.forEach(ticker => {
-    if (demoStockData[ticker]) {
-        const resultDiv = document.createElement('div');
-        resultDiv.className = 'result-item pattern-match';
-        resultDiv.innerHTML = `<h3>${ticker} - PATTERN MATCH ✓</h3><p>Confidence: ${(80 + Math.random() * 20).toFixed(1)}%</p>`;
-        const canvas = document.createElement('canvas');
-        resultDiv.appendChild(canvas);
-        const ctx = canvas.getContext('2d');
-        new Chart(ctx, {
+    const resultDiv = document.createElement('div');
+    resultDiv.className = 'result-item pattern-match';
+    resultDiv.innerHTML = `<h3>${ticker} - PATTERN MATCH ✓${filterContext}</h3><p>Confidence: ${(80 + Math.random() * 20).toFixed(1)}%</p>`;
+    const canvas = document.createElement('canvas');
+    resultDiv.appendChild(canvas);
+    
+    // Use filter-specific data if available
+    const chartData = currentFilter ? 
+        generateFilterData(currentFilter, ticker) : 
+        (demoStockData[ticker] || generateMockData());
+    
+    const ctx = canvas.getContext('2d');
+    new Chart(ctx, {
         type: 'line',
         data: {
-            labels: demoStockData[ticker].slice(-12).map((_, i) => `M${i+1}`),
-            datasets: [{
-            label: ticker,
-            data: demoStockData[ticker].slice(-12).map(d => d.value),
+        labels: chartData.slice(-12).map((_, i) => `M${i+1}`),
+        datasets: [{
+            label: `${ticker}${currentFilter ? ` ${chartData[0].label}` : ''}`,
+            data: chartData.slice(-12).map(d => d.value),
             borderColor: '#00ff80',
             backgroundColor: 'rgba(0, 255, 128, 0.1)',
             borderWidth: 2
-            }]
+        }]
         },
         options: {
-            responsive: true,
-            plugins: { legend: { labels: { color: '#fff' } } },
-            scales: {
-            y: { ticks: { color: '#fff' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+        responsive: true,
+        plugins: { legend: { labels: { color: '#fff' } } },
+        scales: {
+            y: { 
+            ticks: { 
+                color: '#fff',
+                callback: function(value) {
+                if (currentFilter === 'volume') {
+                    return (value / 1000000).toFixed(1) + 'M';
+                }
+                return value.toFixed(currentFilter === 'pe' ? 1 : 0) + 
+                    (chartData[0].suffix || '');
+                }
+            }, 
+            grid: { color: 'rgba(255,255,255,0.1)' } 
+            },
             x: { ticks: { color: '#fff' }, grid: { color: 'rgba(255,255,255,0.1)' } }
-            }
         }
-        });
-        container.appendChild(resultDiv);
-    }
+        }
+    });
+    container.appendChild(resultDiv);
     });
 
     nonMatches.forEach(ticker => {
     const resultDiv = document.createElement('div');
     resultDiv.className = 'result-item';
-    resultDiv.innerHTML = `<h3>${ticker} - No Match</h3><p>Pattern similarity too low</p>`;
+    resultDiv.innerHTML = `<h3>${ticker} - No Match${filterContext}</h3><p>Pattern similarity too low</p>`;
     container.appendChild(resultDiv);
     });
 
     if (matches.length === 0) {
-    container.innerHTML = '<div class="error">No pattern matches found in your portfolio</div>';
+    container.innerHTML = `<div class="error">No pattern matches found in your portfolio${filterContext}</div>`;
     }
 }, 3000);
+}
+
+// Additional functions for filter-specific pattern pages
+function showFilterPatternPage(filterType) {
+currentFilter = filterType;
+showPatternPage();
 }
 
 // UTIL
